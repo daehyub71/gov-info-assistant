@@ -1,0 +1,65 @@
+# =============================================================================
+# Streamlit 클라이언트용 Dockerfile (멀티스테이지 빌드)
+# =============================================================================
+
+# 베이스 이미지
+FROM python:3.9-slim as base
+
+# 작업 디렉토리 설정
+WORKDIR /app
+
+# 시스템 패키지 업데이트 및 필수 도구 설치
+RUN apt-get update && apt-get install -y \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# =============================================================================
+# 의존성 설치 단계
+# =============================================================================
+FROM base as dependencies
+
+# 의존성 파일 복사
+COPY requirements-client.txt .
+
+# Python 패키지 설치
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements-client.txt
+
+# =============================================================================
+# 애플리케이션 빌드 단계
+# =============================================================================
+FROM dependencies as application
+
+# 애플리케이션 코드 복사
+COPY streamlit_app/ ./streamlit_app/
+
+# Streamlit 설정 디렉토리 생성
+RUN mkdir -p ~/.streamlit
+
+# Streamlit 설정 파일 생성
+RUN echo '[server]\n\
+headless = true\n\
+enableCORS = false\n\
+enableXsrfProtection = false\n\
+port = 8501\n\
+address = "0.0.0.0"\n\
+\n\
+[browser]\n\
+gatherUsageStats = false\n\
+\n\
+[theme]\n\
+primaryColor = "#1f77b4"\n\
+backgroundColor = "#ffffff"\n\
+secondaryBackgroundColor = "#f0f2f6"\n\
+textColor = "#262730"\n\
+' > ~/.streamlit/config.toml
+
+# 포트 노출
+EXPOSE 8501
+
+# 헬스체크 설정
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8501/healthz || exit 1
+
+# 애플리케이션 실행
+CMD ["streamlit", "run", "streamlit_app/main.py", "--server.port=8501", "--server.address=0.0.0.0"]

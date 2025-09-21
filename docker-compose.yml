@@ -1,0 +1,91 @@
+version: '3.8'
+
+services:
+  # =============================================================================
+  # FastAPI 백엔드 서버
+  # =============================================================================
+  api-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.server
+    container_name: gov-info-api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    environment:
+      # Azure OpenAI 설정
+      - AOAI_ENDPOINT=${AOAI_ENDPOINT}
+      - AOAI_API_KEY=${AOAI_API_KEY}
+      - AOAI_DEPLOY_GPT4O_MINI=${AOAI_DEPLOY_GPT4O_MINI:-gpt-4o-mini}
+      - AOAI_DEPLOY_GPT4O=${AOAI_DEPLOY_GPT4O:-gpt-4o}
+      - AOAI_DEPLOY_EMBED_3_LARGE=${AOAI_DEPLOY_EMBED_3_LARGE:-text-embedding-3-large}
+      
+      # 애플리케이션 설정
+      - SERVER_URL=http://localhost:8000
+      - CLIENT_URL=http://localhost:8501
+      - VECTOR_DB_PATH=/app/data/vector_db
+      - SESSION_DB_PATH=/app/data/sessions.db
+      
+      # 로깅 설정
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - LOG_FORMAT=${LOG_FORMAT:-json}
+      
+      # 운영 설정
+      - ENVIRONMENT=development
+      - DEBUG=True
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    networks:
+      - gov-info-network
+
+  # =============================================================================
+  # Streamlit 프론트엔드 클라이언트
+  # =============================================================================
+  web-client:
+    build:
+      context: .
+      dockerfile: Dockerfile.client
+    container_name: gov-info-client
+    ports:
+      - "8501:8501"
+    environment:
+      - SERVER_URL=http://api-server:8000
+      - STREAMLIT_SERVER_PORT=8501
+      - STREAMLIT_SERVER_ADDRESS=0.0.0.0
+      - STREAMLIT_BROWSER_GATHER_USAGE_STATS=false
+    depends_on:
+      api-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    networks:
+      - gov-info-network
+
+# =============================================================================
+# 네트워크 설정
+# =============================================================================
+networks:
+  gov-info-network:
+    driver: bridge
+    name: gov-info-network
+
+# =============================================================================
+# 볼륨 설정
+# =============================================================================
+volumes:
+  gov-info-data:
+    name: gov-info-data
+  gov-info-logs:
+    name: gov-info-logs

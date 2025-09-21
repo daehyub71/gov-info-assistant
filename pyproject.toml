@@ -1,0 +1,204 @@
+[tool.pytest.ini_options]
+# =============================================================================
+# pytest 설정
+# =============================================================================
+
+# 테스트 디렉토리
+testpaths = ["tests"]
+
+# 테스트 파일 패턴
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+
+# 최소 Python 버전
+minversion = "6.0"
+
+# 추가 옵션
+addopts = [
+    "-ra",                     # 테스트 결과 요약 표시
+    "--strict-markers",        # 정의되지 않은 마커 사용 시 에러
+    "--strict-config",         # 설정 오류 시 에러
+    "--cov=fastapi_server",    # 커버리지 측정 대상
+    "--cov=streamlit_app",
+    "--cov-report=term-missing", # 누락된 라인 표시
+    "--cov-report=html",       # HTML 커버리지 리포트
+    "--cov-fail-under=80",     # 최소 커버리지 80%
+    "-v",                      # 상세 출력
+]
+
+# 테스트 마커 정의
+markers = [
+    "slow: 실행 시간이 긴 테스트",
+    "integration: 통합 테스트",
+    "unit: 단위 테스트", 
+    "e2e: End-to-End 테스트",
+    "api: API 테스트",
+    "agent: Agent 테스트",
+    "workflow: 워크플로우 테스트",
+    "database: 데이터베이스 테스트",
+    "network: 네트워크 요구 테스트",
+]
+
+# 비동기 테스트 설정
+asyncio_mode = "auto"
+
+# 테스트 디스커버리 패턴
+norecursedirs = [
+    "*.egg",
+    ".eggs",
+    "dist",
+    "build",
+    "docs",
+    ".tox",
+    ".git",
+    "__pycache__",
+    "node_modules",
+    "venv",
+    ".venv",
+]
+
+# 필터링할 경고
+filterwarnings = [
+    "ignore::UserWarning",
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+]
+
+# =============================================================================
+# Black 설정 (코드 포맷팅)
+# =============================================================================
+[tool.black]
+line-length = 88
+target-version = ['py39']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # 제외할 디렉토리
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+  | node_modules
+  | venv
+)/
+'''
+
+# =============================================================================
+# isort 설정 (import 정렬)
+# =============================================================================
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 88
+known_first_party = ["fastapi_server", "streamlit_app"]
+known_third_party = [
+    "fastapi",
+    "streamlit", 
+    "langchain",
+    "langgraph",
+    "openai",
+    "faiss",
+    "pydantic",
+    "httpx",
+    "pytest",
+]
+sections = ["FUTURE", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
+
+# =============================================================================
+# mypy 설정 (타입 체킹)
+# =============================================================================
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+
+# 외부 라이브러리 설정
+[[tool.mypy.overrides]]
+module = [
+    "streamlit.*",
+    "langchain.*", 
+    "langgraph.*",
+    "faiss.*",
+    "plotly.*",
+]
+ignore_missing_imports = true
+
+# =============================================================================
+# coverage 설정
+# =============================================================================
+[tool.coverage.run]
+source = ["fastapi_server", "streamlit_app"]
+omit = [
+    "*/tests/*",
+    "*/test_*",
+    "*/__pycache__/*",
+    "*/venv/*",
+    "*/.venv/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]
+
+[tool.coverage.html]
+directory = "htmlcov"
+
+# =============================================================================
+# 빌드 시스템 설정
+# =============================================================================
+[build-system]
+requires = ["setuptools>=45", "wheel", "setuptools_scm>=6.2"]
+build-backend = "setuptools.build_meta"
+
+# =============================================================================
+# 프로젝트 메타데이터
+# =============================================================================
+[project]
+name = "gov-info-assistant"
+version = "0.1.0"
+description = "일반시민을 위한 정부 공문서 AI 검색 서비스"
+authors = [
+    {name = "Gov Info Assistant Team", email = "team@gov-info-assistant.com"}
+]
+license = {text = "MIT"}
+readme = "README.md"
+requires-python = ">=3.9"
+keywords = ["government", "AI", "search", "documents", "citizen-service"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+]
+
+[project.urls]
+Homepage = "https://github.com/your-username/gov-info-assistant"
+Documentation = "https://github.com/your-username/gov-info-assistant/wiki"
+Repository = "https://github.com/your-username/gov-info-assistant.git"
+"Bug Tracker" = "https://github.com/your-username/gov-info-assistant/issues"

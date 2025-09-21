@@ -1,0 +1,50 @@
+# =============================================================================
+# FastAPI 서버용 Dockerfile (멀티스테이지 빌드)
+# =============================================================================
+
+# 베이스 이미지
+FROM python:3.9-slim as base
+
+# 작업 디렉토리 설정
+WORKDIR /app
+
+# 시스템 패키지 업데이트 및 필수 도구 설치
+RUN apt-get update && apt-get install -y \
+    curl \
+    gcc \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
+
+# =============================================================================
+# 의존성 설치 단계
+# =============================================================================
+FROM base as dependencies
+
+# 의존성 파일 복사
+COPY requirements.txt .
+
+# Python 패키지 설치
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
+
+# =============================================================================
+# 애플리케이션 빌드 단계
+# =============================================================================
+FROM dependencies as application
+
+# 애플리케이션 코드 복사
+COPY fastapi_server/ ./fastapi_server/
+COPY .env.example .env
+
+# 데이터 및 로그 디렉토리 생성
+RUN mkdir -p /app/data/vector_db /app/data/documents /app/logs
+
+# 포트 노출
+EXPOSE 8000
+
+# 헬스체크 설정
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8000/api/v1/health || exit 1
+
+# 애플리케이션 실행
+CMD ["uvicorn", "fastapi_server.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

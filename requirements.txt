@@ -1,0 +1,73 @@
+# FastAPI 서버 의존성
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+pydantic==2.9.2
+pydantic-settings==2.1.0
+
+# LangChain & LangGraph
+langchain>=0.1.0
+langchain-openai>=0.0.2
+langchain-community>=0.0.10
+langgraph>=0.0.20
+langsmith>=0.0.77
+
+# LangFuse - 관찰성 및 모니터링 (LangChain 통합 포함)
+langfuse==2.7.3
+
+# Azure OpenAI (일반 openai 패키지 사용)
+openai==1.51.0
+
+# Vector Database & Search
+faiss-cpu==1.12.0
+# faiss-gpu==1.12.0  # GPU 사용시 주석 해제
+
+# Database & Session Management
+sqlalchemy==2.0.23
+alembic==1.13.1
+# sqlite3  # 내장 모듈 (제거)
+
+# HTTP Client & Networking
+httpx==0.25.2
+aiohttp==3.9.1
+requests==2.31.0
+
+# 데이터 처리
+pandas==2.2.3
+numpy==1.26.4
+pypdf==3.17.4
+python-multipart==0.0.6
+
+# 환경 설정
+python-dotenv==1.0.0
+pydantic-settings==2.1.0
+
+# 로깅 & 모니터링
+structlog==23.2.0
+python-json-logger==2.0.7
+
+# 테스트
+pytest==7.4.3
+pytest-asyncio==0.21.1
+pytest-mock==3.12.0
+pytest-cov==4.1.0
+httpx==0.25.2  # 테스트용 HTTP 클라이언트
+
+# 개발 도구
+black==23.11.0
+isort==5.12.0
+flake8==6.1.0
+mypy==1.7.1
+
+# 보안 & 인증
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+python-multipart==0.0.6
+
+# 성능 최적화
+redis==5.0.1  # 캐시용 (선택사항)
+celery==5.3.4  # 백그라운드 작업용 (선택사항)
+
+# 유틸리티
+python-slugify==8.0.1
+email-validator==2.1.0
+Pillow==10.4.0
