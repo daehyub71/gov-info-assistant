@@ -1,5 +1,1 @@
-"""
-서비스 클라이언트 모듈
-
-FastAPI 서버와의 통신을 담당하는 클라이언트 서비스입니다.
-"""
+"""Streamlit app services package."""

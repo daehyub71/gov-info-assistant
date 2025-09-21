@@ -1,5 +1,1 @@
-"""
-통합 테스트
-
-시스템 간 통합 테스트를 포함합니다.
-"""
+"""Integration tests package."""

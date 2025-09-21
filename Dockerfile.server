@@ -1,50 +1,60 @@
-# =============================================================================
-# FastAPI 서버용 Dockerfile (멀티스테이지 빌드)
-# =============================================================================
+# FastAPI 서버를 위한 멀티스테이지 Dockerfile
+FROM python:3.11-slim as base
 
-# 베이스 이미지
-FROM python:3.9-slim as base
+# 시스템 업데이트 및 필수 패키지 설치
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Python 환경 설정
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
 
 # 작업 디렉토리 설정
 WORKDIR /app
 
-# 시스템 패키지 업데이트 및 필수 도구 설치
-RUN apt-get update && apt-get install -y \
-    curl \
-    gcc \
-    g++ \
-    && rm -rf /var/lib/apt/lists/*
-
-# =============================================================================
-# 의존성 설치 단계
-# =============================================================================
+# 의존성 설치를 위한 단계
 FROM base as dependencies
 
-# 의존성 파일 복사
+# requirements.txt 복사 및 의존성 설치
 COPY requirements.txt .
+RUN pip install --upgrade pip && \
+    pip install -r requirements.txt
 
-# Python 패키지 설치
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+# 개발 단계
+FROM dependencies as development
 
-# =============================================================================
-# 애플리케이션 빌드 단계
-# =============================================================================
-FROM dependencies as application
+# 개발용 패키지 추가 설치
+RUN pip install pytest pytest-asyncio httpx pytest-cov
 
-# 애플리케이션 코드 복사
+# 소스 코드 복사
+COPY . .
+
+# 개발 서버 실행
+CMD ["uvicorn", "fastapi_server.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+
+# 프로덕션 단계
+FROM dependencies as production
+
+# 소스 코드 복사 (최적화된)
 COPY fastapi_server/ ./fastapi_server/
-COPY .env.example .env
+COPY data/ ./data/
+COPY .env* ./
 
-# 데이터 및 로그 디렉토리 생성
-RUN mkdir -p /app/data/vector_db /app/data/documents /app/logs
+# 비-root 사용자 생성
+RUN groupadd -r appuser && useradd -r -g appuser appuser
+RUN chown -R appuser:appuser /app
+USER appuser
+
+# 헬스체크 설정
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8000/api/v1/health || exit 1
 
 # 포트 노출
 EXPOSE 8000
 
-# 헬스체크 설정
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8000/api/v1/health || exit 1
-
-# 애플리케이션 실행
-CMD ["uvicorn", "fastapi_server.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+# 프로덕션 서버 실행
+CMD ["uvicorn", "fastapi_server.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]

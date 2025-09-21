@@ -1,35 +1,59 @@
 version: '3.8'
 
 services:
-  # FastAPI 백엔드 서버
+  # Nginx 리버스 프록시 (프로덕션용)
+  nginx:
+    image: nginx:alpine
+    container_name: gov-info-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - api-server
+      - web-client
+    networks:
+      - gov-info-network
+    restart: unless-stopped
+
+  # FastAPI 백엔드 서버 (프로덕션)
   api-server:
     build:
       context: .
       dockerfile: Dockerfile.server
-      target: development  # 개발용: development, 프로덕션용: production
-    container_name: gov-info-api-server
-    ports:
-      - "8000:8000"
+      target: production
+    container_name: gov-info-api-server-prod
+    expose:
+      - "8000"
     volumes:
-      - ./fastapi_server:/app/fastapi_server
-      - ./data:/app/data
-      - ./tests:/app/tests
-      - ./.env:/app/.env
+      - vector_db_data:/app/data/vector_db
+      - session_db_data:/app/data
+      - ./logs:/app/logs
     environment:
       - AOAI_ENDPOINT=${AOAI_ENDPOINT}
       - AOAI_API_KEY=${AOAI_API_KEY}
       - AOAI_DEPLOY_GPT4O_MINI=${AOAI_DEPLOY_GPT4O_MINI}
       - AOAI_DEPLOY_GPT4O=${AOAI_DEPLOY_GPT4O}
       - AOAI_DEPLOY_EMBED_3_LARGE=${AOAI_DEPLOY_EMBED_3_LARGE}
-      - CLIENT_URL=http://localhost:8501
-      - SERVER_URL=http://localhost:8000
+      - CLIENT_URL=http://localhost
+      - SERVER_URL=http://localhost
       - VECTOR_DB_PATH=/app/data/vector_db
       - SESSION_DB_PATH=/app/data/sessions.db
-      - LOG_LEVEL=INFO
+      - LOG_LEVEL=WARNING
       - PYTHONPATH=/app
     networks:
       - gov-info-network
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+          cpus: '2.0'
+        reservations:
+          memory: 2G
+          cpus: '1.0'
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
       interval: 30s
@@ -37,21 +61,18 @@ services:
       retries: 3
       start_period: 40s
 
-  # Streamlit 프론트엔드 클라이언트
+  # Streamlit 프론트엔드 클라이언트 (프로덕션)
   web-client:
     build:
       context: .
       dockerfile: Dockerfile.client
-      target: development  # 개발용: development, 프로덕션용: production
-    container_name: gov-info-web-client
-    ports:
-      - "8501:8501"
-    volumes:
-      - ./streamlit_app:/app/streamlit_app
-      - ./.env:/app/.env
+      target: production
+    container_name: gov-info-web-client-prod
+    expose:
+      - "8501"
     environment:
       - SERVER_URL=http://api-server:8000
-      - CLIENT_URL=http://localhost:8501
+      - CLIENT_URL=http://localhost
       - PYTHONPATH=/app
     depends_on:
       api-server:
@@ -59,6 +80,14 @@ services:
     networks:
       - gov-info-network
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '1.0'
+        reservations:
+          memory: 1G
+          cpus: '0.5'
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
       interval: 30s

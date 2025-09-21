@@ -1,5 +1,1 @@
-"""
-데이터 모델 정의
-
-API 요청/응답 및 데이터 구조를 정의합니다.
-"""
+"""Models package initialization."""

@@ -1,5 +1,1 @@
-"""
-UI 컴포넌트 모듈
-
-재사용 가능한 Streamlit 컴포넌트들을 정의합니다.
-"""
+"""Streamlit app components package."""

@@ -1,5 +1,1 @@
-"""
-핵심 비즈니스 로직 모듈
-
-Multi-Agent 시스템과 서비스 로직을 포함합니다.
-"""
+"""Core package initialization."""

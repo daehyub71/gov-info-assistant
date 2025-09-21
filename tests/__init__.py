@@ -1,5 +1,1 @@
-"""
-테스트 모듈
-
-프로젝트의 모든 테스트 코드를 포함합니다.
-"""
+"""Tests package initialization."""

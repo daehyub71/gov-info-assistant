@@ -1,5 +1,1 @@
-"""
-Streamlit 페이지 모듈
-
-다양한 페이지 컴포넌트들을 정의합니다.
-"""
+"""Streamlit app pages package."""
